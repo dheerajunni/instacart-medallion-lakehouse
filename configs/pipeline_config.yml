@@ -1,0 +1,51 @@
+# pipeline_config.yml
+# --------------------
+# Central configuration for the Instacart medallion lakehouse pipeline.
+# Update DATA_PATH and *_PATH to match your Databricks DBFS structure.
+
+paths:
+  data:        "/FileStore/instacart"          # Where raw CSVs are uploaded in DBFS
+  bronze:      "/delta/instacart/bronze"
+  silver:      "/delta/instacart/silver"
+  gold:        "/delta/instacart/gold"
+
+quality_thresholds:
+  # Null rate thresholds (0.0 = zero tolerance)
+  null_rate_default:              0.001     # 0.1% for most columns
+  null_rate_days_since_prior:     0.07      # 7% allowed — valid for first orders (~6% in practice)
+
+  # Duplicate rate thresholds
+  duplicate_rate_pk:              0.0       # Zero tolerance on primary keys
+  duplicate_rate_composite_pk:    0.0       # Zero tolerance on composite keys
+
+  # Row count reconciliation (Bronze → Silver drift)
+  reconciliation_threshold:       0.001     # 0.1% row count drift allowed
+
+  # Referential integrity
+  referential_integrity_threshold: 0.0      # Zero orphaned foreign keys
+
+spark:
+  shuffle_partitions: 200                   # Default for Databricks Community Edition
+  broadcast_threshold_mb: 10               # Tables < 10MB broadcast automatically
+
+tables:
+  bronze:
+    - orders
+    - order_products_prior
+    - order_products_train
+    - order_products          # combined
+    - products
+    - aisles
+    - departments
+  silver:
+    - orders
+    - order_products
+    - products
+    - aisles
+    - departments
+  gold:
+    - fct_orders
+    - dim_users
+    - dim_products
+    - mart_dept_performance
+    - mart_reorder_velocity
